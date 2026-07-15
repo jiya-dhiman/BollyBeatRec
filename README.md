@@ -6,8 +6,4 @@ An AI-powered discovery engine that translates your personal vibes, memories, an
 2. **AI Engine:** The app processes your semantic description to find a matching track.
 3. **Discover:** The dashboard presents the perfect song with metadata (vibe, tempo, energy) and a direct link to listen.
 
-## Tech Stack
-
-
-## Features
 

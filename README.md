@@ -3,13 +3,14 @@
 An AI-powered web application that helps users discover the perfect Bollywood song based on their current mood, activity, or specific "vibe."
 
 ## Project Structure
+```text
 BollyBeat_Lounge/
-├── app.py              # Flask backend handling AI logic & routing
+├── app.py            
 ├── templates/
-│   ├── base.html       # Shared site layout
-│   ├── index.html      # Main app dashboard & player logic
-│   ├── about.html      # Project information and mission
-│   └── features.html   # Detailed breakdown of AI capabilities
+│   ├── base.html       
+│   ├── index.html      
+│   ├── about.html      
+│   └── features.html   
 └── README.md
 
 ## Features

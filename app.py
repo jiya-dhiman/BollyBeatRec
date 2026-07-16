@@ -4,7 +4,7 @@ import urllib.parse
 import re
 import json
 from flask import Flask, render_template, request, jsonify
-from google import genai
+import google.generativeai as genai
 from dotenv import load_dotenv
 
 basedir = os.path.abspath(os.path.dirname(__file__))
@@ -17,7 +17,8 @@ api_key = os.getenv("GEMINI_API_KEY")
 if not api_key:
     raise ValueError("GEMINI_API_KEY is not set.")
 
-client = genai.Client(api_key=api_key)
+genai.configure(api_key=api_key)
+model = genai.GenerativeModel('gemini-1.5-flash')
 
 def get_youtube_id(song_title, movie_name):
     """
@@ -77,10 +78,7 @@ def recommend():
 
     try:
         print("Generating recommendation with high-speed gemini-3.1-flash-lite...")
-        response = client.models.generate_content(
-            model='gemini-3.1-flash-lite',
-            contents=ai_instructions
-        )
+        response = model.generate_content(ai_instructions)
 
         # Cleanup response string and parse JSON...
         # (The rest of your logic remains exactly the same)

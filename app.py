@@ -4,30 +4,30 @@ import urllib.parse
 import re
 import json
 from flask import Flask, render_template, request, jsonify
-import google.generativeai as genai
+from google import genai
 from dotenv import load_dotenv
 
-basedir = os.path.abspath(os.path.dirname(__file__))
-load_dotenv(os.path.join(basedir, '.env'))
+load_dotenv()  # Load environment variables from .env file
 
 app = Flask(__name__)
 
-# Updated API Key Check
+# API Key Check
 api_key = os.getenv("GEMINI_API_KEY")
 if not api_key:
     raise ValueError("GEMINI_API_KEY is not set.")
 
-genai.configure(api_key=api_key)
-model = genai.GenerativeModel('gemini-1.5-flash')
+client = genai.Client(api_key=api_key)
 
 def get_youtube_id(song_title, movie_name):
     """
     Programmatically searches YouTube for the song and extracts 
     the very first video ID from the search results page.
     """
+    if not song_title or not movie_name:
+        return None
+        
     search_query = f"{song_title} {movie_name} official audio"
     try:
-        search_query = f"{song_title} {movie_name} official audio"
         encoded_query = urllib.parse.urlencode({"search_query": search_query})
         search_url = f"https://www.youtube.com/results?{encoded_query}"
         
@@ -55,55 +55,44 @@ def recommend():
     user_prompt = request.args.get('prompt', '')
     if not user_prompt:
         return jsonify({"error": "Missing prompt"}), 400
-
+    
     ai_instructions = f"""
     You are a Bollywood Music Expert AI. 
     A user is looking for a song recommendation based on this request: "{user_prompt}"
-    
-    Think of ANY real Bollywood song from history that best fits their vibe, mood, tempo, or dance needs.
-    You must respond ONLY with a raw JSON object containing the song details. Do not add any conversational text or markdown code blocks.
-    
-    Use this exact JSON structure for your response:
+    Respond ONLY with a raw JSON object. No conversational text or markdown code blocks.
+    Use this exact JSON structure:
     {{
-        "id": 1,
         "title": "Song Title",
         "movie": "Movie Name",
-        "vibe": "e.g., Romantic, Energetic, Melancholic",
-        "tempo": "e.g., Fast, Medium, Slow",
-        "energy": "e.g., High, Medium, Low",
-        "dance_difficulty": "e.g., Easy, Medium, Hard",
-        "why": "A short 1-sentence personalized explanation why this specific song matches their request."
+        "vibe": "e.g., Romantic, Energetic",
+        "why": "A short 1-sentence explanation."
     }}
     """
-
+    
     try:
-        print("Generating recommendation with high-speed gemini-3.1-flash-lite...")
-        response = model.generate_content(ai_instructions)
-
-        # Cleanup response string and parse JSON...
-        # (The rest of your logic remains exactly the same)
-
-        # Cleanup response string
-        clean_text = response.text.strip()
-        if clean_text.startswith("```"):
-            lines = clean_text.splitlines()
-            if lines[0].startswith("```"):
-                lines = lines[1:]
-            if lines[-1].startswith("```"):
-                lines = lines[:-1]
-            clean_text = "\n".join(lines).strip()
+        # Utilizing your working model!
+        response = client.models.generate_content(
+            model="gemini-3.1-flash-lite", 
+            contents=ai_instructions
+        )
+        
+        text = response.text.strip()
+        start = text.find('{')
+        end = text.rfind('}') + 1
+        clean_text = text[start:end]
 
         song_data = json.loads(clean_text)
-
+        
         # Retrieve YouTube ID
-        video_id = get_youtube_id(song_data['title'], song_data['movie'])
+        video_id = get_youtube_id(song_data.get('title', ''), song_data.get('movie', ''))
         song_data['youtube_id'] = video_id
 
         return jsonify(song_data)
 
     except Exception as e:
-        return jsonify({"error": "Failed generating recommendation", "details": str(e)}), 500
-
+        print(f"--- DEBUG: ERROR OCCURRED: {str(e)} ---")
+        return jsonify({"error": "Failed", "details": str(e)}), 500
+    
 @app.route('/features')
 def features():
     return render_template('features.html')
@@ -114,4 +103,4 @@ def about():
 
 
 if __name__ == '__main__':
-    app.run()
+    app.run(debug=True)
